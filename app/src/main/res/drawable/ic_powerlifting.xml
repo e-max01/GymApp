@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Barbell -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M 2 2.5 h 2 v 5 h -2 z M 4 4 h 1 v 2 h -1 z M 20 2.5 h 2 v 5 h -2 z M 19 4 h 1 v 2 h -1 z M 2 4.5 h 20 v 1 h -20 z"/>
+    <!-- Head -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M 12 6.5 C 13.1 6.5 14 7.4 14 8.5 S 13.1 10.5 12 10.5 S 10 9.6 10 8.5 S 10.9 6.5 12 6.5 Z"/>
+    <!-- V-Arms, Torso, and Legs -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M 6.5 4.5 L 5 5 L 10 13 L 10 10 Z M 17.5 4.5 L 19 5 L 14 13 L 14 10 Z M 10 10 h 4 v 6 h -4 z M 10 16 L 7 23 L 9 23 L 12 16 Z M 14 16 L 17 23 L 15 23 L 12 16 Z"/>
+</vector>

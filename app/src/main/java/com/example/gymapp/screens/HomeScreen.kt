@@ -1,20 +1,16 @@
 package com.example.gymapp.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.FitnessCenter
-import androidx.compose.material.icons.filled.PieChart
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.gymapp.R
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -61,13 +57,13 @@ fun HomeScreen(navController: NavController) {
                 HomeCard(
                     modifier = Modifier.weight(1f),
                     title = "Schede",
-                    icon = Icons.Default.DateRange,
+                    iconRes = R.drawable.ic_clipboard,
                     onClick = { navController.navigate("schede") }
                 )
                 HomeCard(
                     modifier = Modifier.weight(1f),
                     title = "Dieta",
-                    icon = Icons.Default.PieChart,
+                    iconRes = R.drawable.ic_chicken_leg,
                     onClick = { navController.navigate("dieta") }
                 )
             }
@@ -81,13 +77,13 @@ fun HomeScreen(navController: NavController) {
                 HomeCard(
                     modifier = Modifier.weight(1f),
                     title = "Esercizi",
-                    icon = Icons.Default.FitnessCenter,
+                    iconRes = R.drawable.ic_powerlifting,
                     onClick = { navController.navigate("esercizi") }
                 )
                 HomeCard(
                     modifier = Modifier.weight(1f),
                     title = "Wishlist",
-                    icon = Icons.Default.Star,
+                    iconRes = R.drawable.ic_shooting_star,
                     onClick = { navController.navigate("wishlist") }
                 )
             }
@@ -124,7 +120,7 @@ fun getCurrentTime(): String {
 fun HomeCard(
     modifier: Modifier = Modifier,
     title: String,
-    icon: ImageVector,
+    iconRes: Int,
     onClick: () -> Unit
 ) {
     Card(
@@ -142,7 +138,7 @@ fun HomeCard(
             verticalArrangement = Arrangement.Center
         ) {
             Icon(
-                imageVector = icon,
+                painter = painterResource(id = iconRes),
                 contentDescription = title,
                 modifier = Modifier.size(48.dp)
             )

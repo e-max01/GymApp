@@ -3,7 +3,7 @@ package com.example.gymapp.screens
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,7 +24,7 @@ fun DietScreen(navController: NavController) {
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Torna indietro"
                         )
                     }
@@ -46,7 +46,7 @@ fun DietScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Lista dei macronutrienti (valori simili al tuo prototipo)
+            // Lista dei macro-nutrienti (valori simili al tuo prototipo)
             MacroRow(name = "Proteine", value = "14/100 g", color = Color(0xFF4CAF50))
             MacroRow(name = "Grassi", value = "11/80 g", color = Color(0xFFFF9800))
             MacroRow(name = "Carboidrati", value = "212/400 g", color = Color(0xFF2196F3))

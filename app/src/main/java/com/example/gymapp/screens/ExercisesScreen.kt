@@ -43,7 +43,7 @@ data class ExerciseItem(
     val isCustom: Boolean = false,
 )
 
-// Lista di esercizi hardcodati di default
+// Lista di esercizi hardcoded di default
 val DEFAULT_EXERCISES = listOf(
     // Bicipiti
     ExerciseItem(id = "def_1", name = "Arm curl alla macchina", muscleGroup = "Bicipiti", equipment = "Macchinari", isCustom = false),
@@ -145,7 +145,7 @@ fun ExercisesScreen(
     // Carica gli esercizi personalizzati dell'utente
     var customExercises by remember { mutableStateOf(ExerciseManager.loadCustomExercises(context)) }
 
-    // Unisce gli esercizi hardcodati di default con quelli aggiunti dall'utente
+    // Unisce gli esercizi hardcoded di default con quelli aggiunti dall'utente
     val allExercises = remember(customExercises) {
         DEFAULT_EXERCISES + customExercises
     }
@@ -161,7 +161,7 @@ fun ExercisesScreen(
 
     val isFilterActive = selectedMuscleGroup != "Tutti" || selectedEquipment != "Tutti"
 
-    // Filtra gli esercizi in base alla ricerca ed ai filtri
+    // Filtra gli esercizi in base alla ricerca e ai filtri
     val filteredExercises = remember(searchQuery, selectedMuscleGroup, selectedEquipment, allExercises) {
         allExercises.filter { exercise ->
             val matchesQuery = searchQuery.isBlank() || exercise.name.contains(searchQuery, ignoreCase = true)
@@ -373,7 +373,7 @@ fun ExercisesScreen(
                         }
                     }
 
-                    // Colonna alfabetica verticale scorrevole a destra (A..Z)
+                    // Colonna alfabetica verticale scorrevole a destra (A...Z)
                     AlphabetIndexColumn(
                         activeLetter = activeLetter,
                         onLetterSelected = { letter ->
@@ -491,7 +491,7 @@ fun ExerciseFrameCard(
     }
 }
 
-// Colonna alfabetica A..Z a destra con evidenziazione della lettera attiva
+// Colonna alfabetica A...Z a destra con evidenziazione della lettera attiva
 @Composable
 fun AlphabetIndexColumn(
     activeLetter: Char?,

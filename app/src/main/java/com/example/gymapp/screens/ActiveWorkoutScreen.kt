@@ -178,7 +178,7 @@ private fun triggerTimerFinishedFeedback(appContext: Context, vibration: Boolean
             } catch (_: Exception) {}
         }
     } else {
-        // Schermo spento / telefono bloccato: feedback continuo ad oltranza
+        // Schermo spento / telefono bloccato: feedback continuo a oltranza
         if (vibration) {
             try {
                 val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

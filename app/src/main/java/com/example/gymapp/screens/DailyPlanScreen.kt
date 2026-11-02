@@ -1,6 +1,5 @@
 package com.example.gymapp.screens
 
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -52,7 +51,6 @@ fun DailyPlanDetailScreen(
     onBackClick: () -> Unit,
     onUpdateExercises: (List<ExerciseSetInfo>) -> Unit
 ) {
-    val context = LocalContext.current
     val density = LocalDensity.current
 
     // Stato per attivare la schermata di allenamento
