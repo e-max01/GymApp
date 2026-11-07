@@ -1,5 +1,6 @@
 package com.example.gymapp.screens
 
+import com.example.gymapp.components.AppAlertDialog
 import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,6 +13,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.edit
@@ -79,9 +82,11 @@ fun WishlistScreen(navController: NavController) {
     // Stato per mostrare o nascondere la finestra di aggiunta
     var showDialog by remember { mutableStateOf(false) }
 
+    val outlineColor = MaterialTheme.colorScheme.outlineVariant
+
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text("Wishlist") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
@@ -90,6 +95,18 @@ fun WishlistScreen(navController: NavController) {
                             contentDescription = "Torna indietro"
                         )
                     }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                ),
+                modifier = Modifier.drawBehind {
+                    val strokeWidth = 1.dp.toPx()
+                    drawLine(
+                        color = outlineColor,
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, size.height),
+                        strokeWidth = strokeWidth
+                    )
                 }
             )
         },
@@ -185,49 +202,39 @@ fun AddWishlistItemDialog(onDismiss: () -> Unit, onAdd: (String, String) -> Unit
     val categories = listOf("Essenziale", "Importante", "Utile")
     var selectedCategory by remember { mutableStateOf(categories[0]) }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nuovo acquisto") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = itemName,
-                    onValueChange = { itemName = it },
-                    label = { Text("Cosa vorresti acquistare?") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("Priorità:", style = MaterialTheme.typography.labelMedium)
+        title = "Nuovo acquisto",
+        confirmButtonText = "Aggiungi",
+        onConfirm = {
+            if (itemName.isNotBlank()) onAdd(itemName, selectedCategory)
+        },
+        dismissButtonText = "Annulla",
+        onDismiss = onDismiss,
+        confirmEnabled = itemName.isNotBlank()
+    ) {
+        OutlinedTextField(
+            value = itemName,
+            onValueChange = { itemName = it },
+            label = { Text("Cosa vorresti acquistare?") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Priorità:", style = MaterialTheme.typography.labelMedium)
 
-                // Genera i pallini di selezione per le categorie
-                categories.forEach { category ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        RadioButton(
-                            selected = selectedCategory == category,
-                            onClick = { selectedCategory = category }
-                        )
-                        Text(text = category)
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (itemName.isNotBlank()) onAdd(itemName, selectedCategory)
-                }
+        // Genera i pallini di selezione per le categorie
+        categories.forEach { category ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Aggiungi")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annulla")
+                RadioButton(
+                    selected = selectedCategory == category,
+                    onClick = { selectedCategory = category }
+                )
+                Text(text = category)
             }
         }
-    )
+    }
 }

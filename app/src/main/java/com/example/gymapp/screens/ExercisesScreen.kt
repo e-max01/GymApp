@@ -1,90 +1,47 @@
 package com.example.gymapp.screens
 
+import com.example.gymapp.components.AppAlertDialog
 import android.content.Context
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.edit
 import androidx.navigation.NavController
-import kotlinx.coroutines.launch
+import com.example.gymapp.data.DEFAULT_EXERCISES
+import com.example.gymapp.data.ExerciseItem
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.UUID
 
 // Definizione delle categorie
 val MUSCLE_GROUPS = listOf("Bicipiti", "Tricipiti", "Petto", "Schiena", "Gambe", "Spalle")
-val EQUIPMENT_TYPES = listOf("Bilanciere", "Manubri", "Cavi", "Macchinari")
-
-// Modello dati per il singolo esercizio
-data class ExerciseItem(
-    val id: String = UUID.randomUUID().toString(),
-    val name: String,
-    val muscleGroup: String,
-    val equipment: String,
-    val isCustom: Boolean = false,
-)
-
-// Lista di esercizi hardcoded di default
-val DEFAULT_EXERCISES = listOf(
-    // Bicipiti
-    ExerciseItem(id = "def_1", name = "Arm curl alla macchina", muscleGroup = "Bicipiti", equipment = "Macchinari", isCustom = false),
-    ExerciseItem(id = "def_2", name = "Curl ai cavi bassi", muscleGroup = "Bicipiti", equipment = "Cavi", isCustom = false),
-    ExerciseItem(id = "def_3", name = "Curl alternato con manubri", muscleGroup = "Bicipiti", equipment = "Manubri", isCustom = false),
-    ExerciseItem(id = "def_4", name = "Curl con bilanciere", muscleGroup = "Bicipiti", equipment = "Bilanciere", isCustom = false),
-
-    // Tricipiti
-    ExerciseItem(id = "def_5", name = "Estensioni manubrio sopra la testa", muscleGroup = "Tricipiti", equipment = "Manubri", isCustom = false),
-    ExerciseItem(id = "def_6", name = "French press con bilanciere", muscleGroup = "Tricipiti", equipment = "Bilanciere", isCustom = false),
-    ExerciseItem(id = "def_7", name = "Pushdown ai cavi", muscleGroup = "Tricipiti", equipment = "Cavi", isCustom = false),
-    ExerciseItem(id = "def_8", name = "Tricipiti alla macchina", muscleGroup = "Tricipiti", equipment = "Macchinari", isCustom = false),
-
-    // Petto
-    ExerciseItem(id = "def_9", name = "Chest press", muscleGroup = "Petto", equipment = "Macchinari", isCustom = false),
-    ExerciseItem(id = "def_10", name = "Croci ai cavi alti", muscleGroup = "Petto", equipment = "Cavi", isCustom = false),
-    ExerciseItem(id = "def_11", name = "Panca piana con bilanciere", muscleGroup = "Petto", equipment = "Bilanciere", isCustom = false),
-    ExerciseItem(id = "def_12", name = "Spinte su panca inclinata con manubri", muscleGroup = "Petto", equipment = "Manubri", isCustom = false),
-
-    // Schiena
-    ExerciseItem(id = "def_13", name = "Lat machine avanti", muscleGroup = "Schiena", equipment = "Cavi", isCustom = false),
-    ExerciseItem(id = "def_14", name = "Pulley basso", muscleGroup = "Schiena", equipment = "Macchinari", isCustom = false),
-    ExerciseItem(id = "def_15", name = "Rematore con bilanciere", muscleGroup = "Schiena", equipment = "Bilanciere", isCustom = false),
-    ExerciseItem(id = "def_16", name = "Rematore mono-braccio con manubrio", muscleGroup = "Schiena", equipment = "Manubri", isCustom = false),
-
-    // Gambe
-    ExerciseItem(id = "def_17", name = "Affondi con manubri", muscleGroup = "Gambe", equipment = "Manubri", isCustom = false),
-    ExerciseItem(id = "def_18", name = "Cable pull through", muscleGroup = "Gambe", equipment = "Cavi", isCustom = false),
-    ExerciseItem(id = "def_19", name = "Leg press", muscleGroup = "Gambe", equipment = "Macchinari", isCustom = false),
-    ExerciseItem(id = "def_20", name = "Squat con bilanciere", muscleGroup = "Gambe", equipment = "Bilanciere", isCustom = false),
-
-    // Spalle
-    ExerciseItem(id = "def_21", name = "Alzate laterali ai cavi", muscleGroup = "Spalle", equipment = "Cavi", isCustom = false),
-    ExerciseItem(id = "def_22", name = "Alzate laterali con manubri", muscleGroup = "Spalle", equipment = "Manubri", isCustom = false),
-    ExerciseItem(id = "def_23", name = "Lento avanti con bilanciere", muscleGroup = "Spalle", equipment = "Bilanciere", isCustom = false),
-    ExerciseItem(id = "def_24", name = "Shoulder press", muscleGroup = "Spalle", equipment = "Macchinari", isCustom = false)
-)
+val EQUIPMENT_TYPES = listOf("Bilanciere", "Manubri", "Cavi", "Macchinari", "Corpo libero")
 
 sealed class ExerciseUiItem {
     data class GroupHeader(val muscleGroup: String) : ExerciseUiItem()
-    data class EquipmentHeader(val equipment: String) : ExerciseUiItem()
+    data class EquipmentHeader(val muscleGroup: String, val equipment: String) : ExerciseUiItem()
     data class ExerciseCard(val exercise: ExerciseItem) : ExerciseUiItem()
 }
 
@@ -140,7 +97,9 @@ fun ExercisesScreen(
     onBackClickOverride: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
+
+    // Stato per la modalità modifica (ispirato alle schede workout)
+    var isEditing by remember { mutableStateOf(false) }
 
     // Carica gli esercizi personalizzati dell'utente
     var customExercises by remember { mutableStateOf(ExerciseManager.loadCustomExercises(context)) }
@@ -180,7 +139,7 @@ fun ExercisesScreen(
             list.add(ExerciseUiItem.GroupHeader(group))
             val groupedByEquip = groupExercises.groupBy { it.equipment }
             groupedByEquip.forEach { (equip, equipExercises) ->
-                list.add(ExerciseUiItem.EquipmentHeader(equip))
+                list.add(ExerciseUiItem.EquipmentHeader(group, equip))
                 equipExercises.sortedBy { it.name }.forEach { exercise ->
                     list.add(ExerciseUiItem.ExerciseCard(exercise))
                 }
@@ -191,25 +150,11 @@ fun ExercisesScreen(
 
     val listState = rememberLazyListState()
 
-    // Determina la lettera attiva nell'alfabeto in base al primo elemento visibile
-    val firstVisibleIndex by remember { derivedStateOf { listState.firstVisibleItemIndex } }
-    val activeLetter by remember(firstVisibleIndex, uiItems) {
-        derivedStateOf {
-            var letter: Char? = null
-            for (i in firstVisibleIndex until uiItems.size) {
-                val item = uiItems.getOrNull(i)
-                if (item is ExerciseUiItem.ExerciseCard) {
-                    letter = item.exercise.name.firstOrNull()?.uppercaseChar()
-                    break
-                }
-            }
-            letter
-        }
-    }
+    val outlineColor = MaterialTheme.colorScheme.outlineVariant
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text(if (onSelectExercise != null) "Seleziona Esercizio" else "Esercizi") },
                 navigationIcon = {
                     IconButton(
@@ -226,12 +171,55 @@ fun ExercisesScreen(
                             contentDescription = "Indietro"
                         )
                     }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                ),
+                modifier = Modifier.drawBehind {
+                    val strokeWidth = 1.dp.toPx()
+                    drawLine(
+                        color = outlineColor,
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, size.height),
+                        strokeWidth = strokeWidth
+                    )
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Aggiungi esercizio")
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 32.dp)
+            ) {
+                if (isEditing) {
+                    FloatingActionButton(
+                        onClick = { showAddDialog = true },
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.align(Alignment.BottomStart)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Aggiungi esercizio"
+                        )
+                    }
+                }
+                FloatingActionButton(
+                    onClick = { isEditing = !isEditing },
+                    containerColor = if (isEditing) MaterialTheme.colorScheme.primary else Color(0xFF9E9E9E),
+                    contentColor = if (isEditing) MaterialTheme.colorScheme.onPrimary else Color.White,
+                    elevation = FloatingActionButtonDefaults.elevation(
+                        defaultElevation = if (isEditing) 6.dp else 2.dp,
+                        pressedElevation = if (isEditing) 8.dp else 4.dp
+                    ),
+                    modifier = Modifier.align(Alignment.BottomEnd)
+                ) {
+                    Icon(
+                        imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
+                        contentDescription = if (isEditing) "Conferma modifica" else "Attiva modifica"
+                    )
+                }
             }
         }
     ) { paddingValues ->
@@ -239,15 +227,14 @@ fun ExercisesScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 8.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             // Barra di ricerca con icona filtro a destra
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(end = 12.dp),
+                    .fillMaxWidth(),
                 placeholder = { Text("Inserisci nome esercizio") },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Cerca") },
                 trailingIcon = {
@@ -267,7 +254,7 @@ fun ExercisesScreen(
             if (isFilterActive) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
-                    modifier = Modifier.padding(end = 12.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -322,75 +309,62 @@ fun ExercisesScreen(
                     )
                 }
             } else {
-                Row(modifier = Modifier.fillMaxSize()) {
-                    // Lista principale a sinistra
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                        contentPadding = PaddingValues(end = 8.dp, bottom = 80.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        itemsIndexed(uiItems) { _, item ->
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 80.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    items(
+                        items = uiItems,
+                        key = { item ->
                             when (item) {
-                                is ExerciseUiItem.GroupHeader -> {
-                                    Spacer(modifier = Modifier.height(12.dp))
-                                    Text(
-                                        text = item.muscleGroup,
-                                        style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onBackground,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 4.dp)
-                                    )
-                                }
-                                is ExerciseUiItem.EquipmentHeader -> {
-                                    Text(
-                                        text = item.equipment,
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(top = 4.dp, bottom = 6.dp)
-                                    )
-                                }
-                                is ExerciseUiItem.ExerciseCard -> {
-                                    ExerciseFrameCard(
-                                        exercise = item.exercise,
-                                        onClick = if (onSelectExercise != null) {
-                                            { onSelectExercise.invoke(item.exercise, 3, 10) }
-                                        } else null,
-                                        onDelete = {
-                                            val updated = customExercises.filterNot { it.id == item.exercise.id }
-                                            customExercises = updated
-                                            ExerciseManager.saveCustomExercises(context, updated)
-                                        }
-                                    )
-                                }
+                                is ExerciseUiItem.GroupHeader -> "group_${item.muscleGroup}"
+                                is ExerciseUiItem.EquipmentHeader -> "equip_${item.muscleGroup}_${item.equipment}"
+                                is ExerciseUiItem.ExerciseCard -> item.exercise.id
+                            }
+                        }
+                    ) { item ->
+                        when (item) {
+                            is ExerciseUiItem.GroupHeader -> {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    text = item.muscleGroup,
+                                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                )
+                            }
+                            is ExerciseUiItem.EquipmentHeader -> {
+                                Text(
+                                    text = item.equipment,
+                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 4.dp, bottom = 6.dp)
+                                )
+                            }
+                            is ExerciseUiItem.ExerciseCard -> {
+                                ExerciseFrameCard(
+                                    exercise = item.exercise,
+                                    isEditing = isEditing,
+                                    onClick = if (onSelectExercise != null) {
+                                        { onSelectExercise.invoke(item.exercise, 3, 10) }
+                                    } else null,
+                                    onDelete = {
+                                        val updated = customExercises.filterNot { it.id == item.exercise.id }
+                                        customExercises = updated
+                                        ExerciseManager.saveCustomExercises(context, updated)
+                                    }
+                                )
                             }
                         }
                     }
-
-                    // Colonna alfabetica verticale scorrevole a destra (A...Z)
-                    AlphabetIndexColumn(
-                        activeLetter = activeLetter,
-                        onLetterSelected = { letter ->
-                            val targetIndex = uiItems.indexOfFirst { uiItem ->
-                                when (uiItem) {
-                                    is ExerciseUiItem.ExerciseCard -> uiItem.exercise.name.startsWith(letter, ignoreCase = true)
-                                    else -> false
-                                }
-                            }
-                            if (targetIndex >= 0) {
-                                coroutineScope.launch {
-                                    listState.animateScrollToItem(targetIndex)
-                                }
-                            }
-                        },
-                        modifier = Modifier.width(22.dp)
-                    )
                 }
             }
         }
@@ -434,6 +408,7 @@ fun ExercisesScreen(
 @Composable
 fun ExerciseFrameCard(
     exercise: ExerciseItem,
+    isEditing: Boolean = false,
     onClick: (() -> Unit)? = null,
     onDelete: () -> Unit
 ) {
@@ -441,9 +416,7 @@ fun ExerciseFrameCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .then(
-                if (onClick != null) Modifier.clickable { onClick() } else Modifier
-            ),
+            .clickable(enabled = onClick != null) { onClick?.invoke() },
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -471,8 +444,8 @@ fun ExerciseFrameCard(
                 modifier = Modifier.weight(1f)
             )
 
-            // Mostra il pulsante di eliminazione SOLO per gli esercizi aggiunti manualmente dall'utente
-            if (exercise.isCustom) {
+            // Mostra il pulsante di eliminazione SOLO per gli esercizi aggiunti manualmente dall'utente quando in modalità modifica
+            if (isEditing && exercise.isCustom) {
                 IconButton(
                     onClick = onDelete,
                     modifier = Modifier.size(32.dp)
@@ -487,35 +460,6 @@ fun ExerciseFrameCard(
                 // Riserva uno spazio vuoto identico di 32.dp per garantire una dimensione verticale sempre uniforme
                 Spacer(modifier = Modifier.size(32.dp))
             }
-        }
-    }
-}
-
-// Colonna alfabetica A...Z a destra con evidenziazione della lettera attiva
-@Composable
-fun AlphabetIndexColumn(
-    activeLetter: Char?,
-    onLetterSelected: (Char) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val alphabet = ('A'..'Z').toList()
-
-    Column(
-        modifier = modifier.fillMaxHeight(),
-        verticalArrangement = Arrangement.SpaceEvenly,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        alphabet.forEach { letter ->
-            val isSelected = activeLetter == letter
-            Text(
-                text = letter.toString(),
-                fontSize = if (isSelected) 12.sp else 9.sp,
-                fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Normal,
-                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier
-                    .clickable { onLetterSelected(letter) }
-                    .padding(vertical = 0.5.dp)
-            )
         }
     }
 }
@@ -537,91 +481,78 @@ fun FilterDialog(
     val allGroups = listOf("Tutti") + MUSCLE_GROUPS
     val allEquip = listOf("Tutti") + EQUIPMENT_TYPES
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Filtra Esercizi") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                // Dropdown Gruppo Muscolare
-                ExposedDropdownMenuBox(
-                    expanded = groupExpanded,
-                    onExpandedChange = { groupExpanded = !groupExpanded }
-                ) {
-                    OutlinedTextField(
-                        value = tempGroup,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Gruppo Muscolare") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = groupExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
-                    )
-                    ExposedDropdownMenu(
-                        expanded = groupExpanded,
-                        onDismissRequest = { groupExpanded = false }
-                    ) {
-                        allGroups.forEach { group ->
-                            DropdownMenuItem(
-                                text = { Text(group) },
-                                onClick = {
-                                    tempGroup = group
-                                    groupExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                // Dropdown Strumento
-                ExposedDropdownMenuBox(
-                    expanded = equipExpanded,
-                    onExpandedChange = { equipExpanded = !equipExpanded }
-                ) {
-                    OutlinedTextField(
-                        value = tempEquip,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Strumento") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = equipExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
-                    )
-                    ExposedDropdownMenu(
-                        expanded = equipExpanded,
-                        onDismissRequest = { equipExpanded = false }
-                    ) {
-                        allEquip.forEach { equip ->
-                            DropdownMenuItem(
-                                text = { Text(equip) },
-                                onClick = {
-                                    tempEquip = equip
-                                    equipExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-            }
+        title = "Filtra Esercizi",
+        confirmButtonText = "Applica",
+        onConfirm = {
+            onApply(tempGroup, tempEquip)
         },
-        confirmButton = {
-            Button(
-                onClick = {
-                    onApply(tempGroup, tempEquip)
+        dismissButtonText = "Indietro",
+        onDismiss = onDismiss
+    ) {
+        // Dropdown Gruppo Muscolare
+        ExposedDropdownMenuBox(
+            expanded = groupExpanded,
+            onExpandedChange = { groupExpanded = !groupExpanded }
+        ) {
+            OutlinedTextField(
+                value = tempGroup,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Gruppo Muscolare") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = groupExpanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+            )
+            ExposedDropdownMenu(
+                expanded = groupExpanded,
+                onDismissRequest = { groupExpanded = false }
+            ) {
+                allGroups.forEach { group ->
+                    DropdownMenuItem(
+                        text = { Text(group) },
+                        onClick = {
+                            tempGroup = group
+                            groupExpanded = false
+                        }
+                    )
                 }
-            ) {
-                Text("Applica")
-            }
-        },
-        dismissButton = {
-            TextButton(
-                onClick = onDismiss
-            ) {
-                Text("Indietro")
             }
         }
-    )
+
+        // Dropdown Strumento
+        ExposedDropdownMenuBox(
+            expanded = equipExpanded,
+            onExpandedChange = { equipExpanded = !equipExpanded }
+        ) {
+            OutlinedTextField(
+                value = tempEquip,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Strumento") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = equipExpanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+            )
+            ExposedDropdownMenu(
+                expanded = equipExpanded,
+                onDismissRequest = { equipExpanded = false }
+            ) {
+                allEquip.forEach { equip ->
+                    DropdownMenuItem(
+                        text = { Text(equip) },
+                        onClick = {
+                            tempEquip = equip
+                            equipExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -637,97 +568,87 @@ fun AddExerciseDialog(
     var groupExpanded by remember { mutableStateOf(false) }
     var equipExpanded by remember { mutableStateOf(false) }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Nuovo Esercizio") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("Nome esercizio") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                // Dropdown Gruppo Muscolare
-                ExposedDropdownMenuBox(
-                    expanded = groupExpanded,
-                    onExpandedChange = { groupExpanded = !groupExpanded }
-                ) {
-                    OutlinedTextField(
-                        value = selectedGroup,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Gruppo Muscolare") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = groupExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
-                    )
-                    ExposedDropdownMenu(
-                        expanded = groupExpanded,
-                        onDismissRequest = { groupExpanded = false }
-                    ) {
-                        MUSCLE_GROUPS.forEach { group ->
-                            DropdownMenuItem(
-                                text = { Text(group) },
-                                onClick = {
-                                    selectedGroup = group
-                                    groupExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                // Dropdown Strumento
-                ExposedDropdownMenuBox(
-                    expanded = equipExpanded,
-                    onExpandedChange = { equipExpanded = !equipExpanded }
-                ) {
-                    OutlinedTextField(
-                        value = selectedEquip,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Strumento") },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = equipExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
-                    )
-                    ExposedDropdownMenu(
-                        expanded = equipExpanded,
-                        onDismissRequest = { equipExpanded = false }
-                    ) {
-                        EQUIPMENT_TYPES.forEach { equip ->
-                            DropdownMenuItem(
-                                text = { Text(equip) },
-                                onClick = {
-                                    selectedEquip = equip
-                                    equipExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
+        title = "Nuovo Esercizio",
+        confirmButtonText = "Aggiungi",
+        onConfirm = {
+            if (name.isNotBlank()) {
+                onAdd(name.trim(), selectedGroup, selectedEquip)
             }
         },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (name.isNotBlank()) {
-                        onAdd(name.trim(), selectedGroup, selectedEquip)
-                    }
-                }
+        dismissButtonText = "Annulla",
+        onDismiss = onDismiss,
+        confirmEnabled = name.isNotBlank()
+    ) {
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = { Text("Nome esercizio") },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Dropdown Gruppo Muscolare
+        ExposedDropdownMenuBox(
+            expanded = groupExpanded,
+            onExpandedChange = { groupExpanded = !groupExpanded }
+        ) {
+            OutlinedTextField(
+                value = selectedGroup,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Gruppo Muscolare") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = groupExpanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+            )
+            ExposedDropdownMenu(
+                expanded = groupExpanded,
+                onDismissRequest = { groupExpanded = false }
             ) {
-                Text("Aggiungi")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annulla")
+                MUSCLE_GROUPS.forEach { group ->
+                    DropdownMenuItem(
+                        text = { Text(group) },
+                        onClick = {
+                            selectedGroup = group
+                            groupExpanded = false
+                        }
+                    )
+                }
             }
         }
-    )
+
+        // Dropdown Strumento
+        ExposedDropdownMenuBox(
+            expanded = equipExpanded,
+            onExpandedChange = { equipExpanded = !equipExpanded }
+        ) {
+            OutlinedTextField(
+                value = selectedEquip,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Strumento") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = equipExpanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+            )
+            ExposedDropdownMenu(
+                expanded = equipExpanded,
+                onDismissRequest = { equipExpanded = false }
+            ) {
+                EQUIPMENT_TYPES.forEach { equip ->
+                    DropdownMenuItem(
+                        text = { Text(equip) },
+                        onClick = {
+                            selectedEquip = equip
+                            equipExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+    }
 }

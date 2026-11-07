@@ -1,5 +1,6 @@
 package com.example.gymapp.screens
 
+import com.example.gymapp.components.AppAlertDialog
 import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -16,6 +17,7 @@ import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -34,6 +36,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
@@ -312,6 +316,11 @@ fun ActiveWorkoutScreen(
     var showOverview by remember { mutableStateOf(false) }
     var showTimerSelectionDialog by remember { mutableStateOf(false) }
     var setToEdit by remember { mutableStateOf<FlatSet?>(null) }
+    var showExitConfirmation by remember { mutableStateOf(false) }
+
+    BackHandler {
+        showExitConfirmation = true
+    }
 
     val timeLeftMs = if (isTimerRunning) maxOf(0L, endTimeMs - currentTimeMs) else 0L
 
@@ -352,12 +361,14 @@ fun ActiveWorkoutScreen(
         }
     }
 
+    val outlineColor = MaterialTheme.colorScheme.outlineVariant
+
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text(if (timeLeftMs > 0L) "Preparazione" else dailyPlanName) },
                 navigationIcon = {
-                    IconButton(onClick = onClose) {
+                    IconButton(onClick = { showExitConfirmation = true }) {
                         Icon(imageVector = Icons.Default.Close, contentDescription = "Chiudi allenamento")
                     }
                 },
@@ -367,6 +378,18 @@ fun ActiveWorkoutScreen(
                             Icon(imageVector = Icons.AutoMirrored.Filled.List, contentDescription = "Panoramica scheda")
                         }
                     }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                ),
+                modifier = Modifier.drawBehind {
+                    val strokeWidth = 1.dp.toPx()
+                    drawLine(
+                        color = outlineColor,
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, size.height),
+                        strokeWidth = strokeWidth
+                    )
                 }
             )
         },
@@ -554,157 +577,152 @@ fun ActiveWorkoutScreen(
             "1:30" to 90_000L,
             "2:00" to 120_000L
         )
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showTimerSelectionDialog = false },
-            title = { Text("Imposta tempo di recupero") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    // Contenitore per i Pulsanti di selezione del tempo
-                    Surface(
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            options.forEach { (label, durationMs) ->
-                                val isSelected = (savedRestDurationMs == durationMs)
-                                if (isSelected) {
-                                    Button(
-                                        onClick = {
-                                            sharedPreferences.edit { putLong("rest_timer_ms", durationMs) }
-                                            savedRestDurationMs = durationMs
-                                            val nowTime = System.currentTimeMillis()
-                                            initialDurationMs = durationMs
-                                            endTimeMs = nowTime + durationMs
-                                            currentTimeMs = nowTime
-                                            isTimerRunning = true
-                                        },
-                                        shape = RoundedCornerShape(8.dp),
-                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text(label, style = MaterialTheme.typography.labelMedium)
-                                    }
-                                } else {
-                                    OutlinedButton(
-                                        onClick = {
-                                            sharedPreferences.edit { putLong("rest_timer_ms", durationMs) }
-                                            savedRestDurationMs = durationMs
-                                            val nowTime = System.currentTimeMillis()
-                                            initialDurationMs = durationMs
-                                            endTimeMs = nowTime + durationMs
-                                            currentTimeMs = nowTime
-                                            isTimerRunning = true
-                                        },
-                                        shape = RoundedCornerShape(8.dp),
-                                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                                        modifier = Modifier.weight(1f)
-                                    ) {
-                                        Text(label, style = MaterialTheme.typography.labelMedium)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Riga 2: Riquadro Vibrazione + Riquadro Suono (stessa altezza e colore di sfondo)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(IntrinsicSize.Max),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Contenitore Riquadro Vibrazione
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                Switch(
-                                    checked = isVibrationEnabled,
-                                    onCheckedChange = { newValue ->
-                                        sharedPreferences.edit { putBoolean("vibration_enabled", newValue) }
-                                        isVibrationEnabled = newValue
-                                    }
-                                )
-                                Text("Vibrazione", style = MaterialTheme.typography.bodySmall)
-                            }
-                        }
-
-                        // Contenitore Riquadro Suono (stesso colore, stile e altezza)
-                        val soundTitle = remember(soundUriString) { getRingtoneTitle(context, soundUriString) }
-
-                        Surface(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .clickable {
-                                    val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
-                                        putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Seleziona suono notifica")
-                                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
-                                        val currentUri = if (soundUriString != "none" && soundUriString.isNotBlank()) {
-                                            soundUriString.toUri()
-                                        } else null
-                                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, currentUri)
-                                    }
-                                    soundPickerLauncher.launch(intent)
+            title = "Imposta tempo di recupero",
+            confirmButtonText = "OK",
+            onConfirm = { showTimerSelectionDialog = false },
+            dismissButtonText = null,
+            onDismiss = null
+        ) {
+            // Contenitore per i Pulsanti di selezione del tempo
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    options.forEach { (label, durationMs) ->
+                        val isSelected = (savedRestDurationMs == durationMs)
+                        if (isSelected) {
+                            Button(
+                                onClick = {
+                                    sharedPreferences.edit { putLong("rest_timer_ms", durationMs) }
+                                    savedRestDurationMs = durationMs
+                                    val nowTime = System.currentTimeMillis()
+                                    initialDurationMs = durationMs
+                                    endTimeMs = nowTime + durationMs
+                                    currentTimeMs = nowTime
+                                    isTimerRunning = true
                                 },
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                modifier = Modifier.weight(1f)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Notifications,
-                                    contentDescription = "Suono notifica",
-                                    modifier = Modifier.size(18.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = soundTitle,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1
-                                )
+                                Text(label, style = MaterialTheme.typography.labelMedium)
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = {
+                                    sharedPreferences.edit { putLong("rest_timer_ms", durationMs) }
+                                    savedRestDurationMs = durationMs
+                                    val nowTime = System.currentTimeMillis()
+                                    initialDurationMs = durationMs
+                                    endTimeMs = nowTime + durationMs
+                                    currentTimeMs = nowTime
+                                    isTimerRunning = true
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(label, style = MaterialTheme.typography.labelMedium)
                             }
                         }
                     }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showTimerSelectionDialog = false }) {
-                    Text("OK")
                 }
             }
-        )
+
+            // Riga 2: Riquadro Vibrazione + Riquadro Suono (stessa altezza e colore di sfondo)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Contenitore Riquadro Vibrazione
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Switch(
+                            checked = isVibrationEnabled,
+                            onCheckedChange = { newValue ->
+                                sharedPreferences.edit { putBoolean("vibration_enabled", newValue) }
+                                isVibrationEnabled = newValue
+                            }
+                        )
+                        Text("Vibrazione", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+
+                // Contenitore Riquadro Suono (stesso colore, stile e altezza)
+                val soundTitle = remember(soundUriString) { getRingtoneTitle(context, soundUriString) }
+
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable {
+                            val intent = Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                                putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_NOTIFICATION)
+                                putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Seleziona suono notifica")
+                                putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                                putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
+                                val currentUri = if (soundUriString != "none" && soundUriString.isNotBlank()) {
+                                    soundUriString.toUri()
+                                } else null
+                                putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, currentUri)
+                            }
+                            soundPickerLauncher.launch(intent)
+                        },
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Suono notifica",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = soundTitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+        }
     }
 
     // Dialog Modifica Volante
     setToEdit?.let { targetSet ->
         EditSetValuesDialog(
-            setNumber = targetSet.setIndex + 1,
             setDetail = targetSet.setDetail,
             onDismiss = { setToEdit = null },
             onConfirm = { newReps, newWeight ->
@@ -722,45 +740,66 @@ fun ActiveWorkoutScreen(
 
     // Dialog Panoramica Scheda
     if (showOverview) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showOverview = false },
-            title = { Text("Panoramica Allenamento") },
-            text = {
-                LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                    itemsIndexed(flatSets) { index, flatSet ->
-                        val isCurrent = index == currentGlobalSetIndex
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp)
-                                .clip(MaterialTheme.shapes.small)
-                                .background(if (isCurrent) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
-                                .clickable {
-                                    currentGlobalSetIndex = index
-                                    showOverview = false
-                                }
-                                .padding(8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column {
-                                Text(
-                                    text = flatSet.exercise.name,
-                                    fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
-                                )
-                                Text(
-                                    text = "Serie ${flatSet.setIndex + 1}",
-                                    style = MaterialTheme.typography.bodySmall
-                                )
+            title = "Panoramica Allenamento",
+            confirmButtonText = "Chiudi",
+            onConfirm = { showOverview = false },
+            dismissButtonText = null,
+            onDismiss = null
+        ) {
+            LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
+                itemsIndexed(flatSets) { index, flatSet ->
+                    val isCurrent = index == currentGlobalSetIndex
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clip(MaterialTheme.shapes.small)
+                            .background(if (isCurrent) MaterialTheme.colorScheme.primaryContainer else Color.Transparent)
+                            .clickable {
+                                currentGlobalSetIndex = index
+                                showOverview = false
                             }
-                            Text("${flatSet.setDetail.reps} x ${flatSet.setDetail.weightKg} kg")
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = flatSet.exercise.name,
+                                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
+                            )
+                            Text(
+                                text = "Serie ${flatSet.setIndex + 1}",
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
+                        val overviewWeightFormatted = if (flatSet.setDetail.weightKg % 1f == 0f) flatSet.setDetail.weightKg.toInt().toString() else flatSet.setDetail.weightKg.toString()
+                        Text("${flatSet.setDetail.reps} x $overviewWeightFormatted kg")
                     }
                 }
-            },
-            confirmButton = {
-                TextButton(onClick = { showOverview = false }) { Text("Chiudi") }
             }
-        )
+        }
+    }
+
+    // Dialog Conferma Uscita
+    if (showExitConfirmation) {
+        AppAlertDialog(
+            onDismissRequest = { showExitConfirmation = false },
+            title = "Torna indietro",
+            confirmButtonText = "Sì",
+            onConfirm = {
+                showExitConfirmation = false
+                onClose()
+            },
+            dismissButtonText = "Annulla",
+            onDismiss = { showExitConfirmation = false }
+        ) {
+            Text(
+                text = "Sei sicuro di voler tornare indietro?\nI progressi dell'allenamento andranno persi.",
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }

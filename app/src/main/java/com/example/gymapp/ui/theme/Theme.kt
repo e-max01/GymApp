@@ -16,26 +16,36 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.core.content.edit
 
+import androidx.compose.ui.graphics.Color
+
 private val DarkColorScheme = darkColorScheme(
     primary = Purple80,
     secondary = PurpleGrey80,
-    tertiary = Pink80
+    tertiary = Pink80,
+    background = Color.Black,
+    surface = Color.Black,
+    surfaceContainer = Color.Black,
+    surfaceContainerLow = Color.Black,
+    surfaceContainerHigh = Color.Black,
+    surfaceContainerHighest = Color.Black,
+    surfaceContainerLowest = Color.Black,
+    onBackground = Color.White,
+    onSurface = Color.White
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = Purple40,
     secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    tertiary = Pink40,
+    background = Color.White,
+    surface = Color.White,
+    surfaceContainer = Color.White,
+    surfaceContainerLow = Color.White,
+    surfaceContainerHigh = Color.White,
+    surfaceContainerHighest = Color.White,
+    surfaceContainerLowest = Color.White,
+    onBackground = Color.Black,
+    onSurface = Color.Black
 )
 
 @Composable
@@ -48,7 +58,29 @@ fun GymAppTheme(
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            if (darkTheme) {
+                dynamicDarkColorScheme(context).copy(
+                    background = Color.Black,
+                    surface = Color.Black,
+                    surfaceContainer = Color.Black,
+                    surfaceContainerLow = Color.Black,
+                    surfaceContainerHigh = Color.Black,
+                    surfaceContainerHighest = Color.Black,
+                    onBackground = Color.White,
+                    onSurface = Color.White
+                )
+            } else {
+                dynamicLightColorScheme(context).copy(
+                    background = Color.White,
+                    surface = Color.White,
+                    surfaceContainer = Color.White,
+                    surfaceContainerLow = Color.White,
+                    surfaceContainerHigh = Color.White,
+                    surfaceContainerHighest = Color.White,
+                    onBackground = Color.Black,
+                    onSurface = Color.Black
+                )
+            }
         }
 
         darkTheme -> DarkColorScheme

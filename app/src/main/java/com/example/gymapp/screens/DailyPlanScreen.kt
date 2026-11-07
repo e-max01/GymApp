@@ -1,5 +1,6 @@
 package com.example.gymapp.screens
 
+import com.example.gymapp.components.AppAlertDialog
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -19,12 +20,18 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
@@ -57,13 +64,15 @@ fun DailyPlanDetailScreen(
     var isActiveWorkoutRunning by remember { mutableStateOf(false) }
 
     // Se la scheda è vuota, la modalità modifica si attiva automaticamente
-    var isEditing by remember(dailyPlan.exercises.isEmpty()) {
+    var isEditing by remember(dailyPlan.id) {
         mutableStateOf(dailyPlan.exercises.isEmpty())
     }
     var isPickingExercise by remember { mutableStateOf(false) }
 
     // Serie da modificare: exerciseId, numero serie, SetDetail
     var setToEditInfo by remember { mutableStateOf<Triple<String, Int, SetDetail>?>(null) }
+    // Esercizio a cui aggiungere serie: ExerciseSetInfo
+    var exerciseToAddSetsFor by remember { mutableStateOf<ExerciseSetInfo?>(null) }
 
     val listState = rememberLazyListState()
 
@@ -268,20 +277,34 @@ fun DailyPlanDetailScreen(
             }
         )
     } else {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text(dailyPlan.name) },
-                    navigationIcon = {
-                        IconButton(onClick = onBackClick) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Torna indietro"
-                            )
-                        }
+    val outlineColor = MaterialTheme.colorScheme.outlineVariant
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text(dailyPlan.name) },
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Torna indietro"
+                        )
                     }
-                )
-            },
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                ),
+                modifier = Modifier.drawBehind {
+                    val strokeWidth = 1.dp.toPx()
+                    drawLine(
+                        color = outlineColor,
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, size.height),
+                        strokeWidth = strokeWidth
+                    )
+                }
+            )
+        },
             floatingActionButton = {
                 Box(
                     modifier = Modifier
@@ -292,8 +315,12 @@ fun DailyPlanDetailScreen(
                     if (exercises.isEmpty()) {
                         FloatingActionButton(
                             onClick = { isEditing = !isEditing },
-                            containerColor = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = if (isEditing) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer
+                            containerColor = if (isEditing) MaterialTheme.colorScheme.primary else Color(0xFF9E9E9E),
+                            contentColor = if (isEditing) MaterialTheme.colorScheme.onPrimary else Color.White,
+                            elevation = FloatingActionButtonDefaults.elevation(
+                                defaultElevation = if (isEditing) 6.dp else 12.dp,
+                                pressedElevation = if (isEditing) 8.dp else 16.dp
+                            )
                         ) {
                             Icon(
                                 imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
@@ -307,8 +334,12 @@ fun DailyPlanDetailScreen(
                         ) {
                             FloatingActionButton(
                                 onClick = { isActiveWorkoutRunning = true }, // APRE LA NUOVA SCHERMATA
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
+                                containerColor = Color(0xFF4CAF50),
+                                contentColor = Color.White,
+                                elevation = FloatingActionButtonDefaults.elevation(
+                                    defaultElevation = 12.dp,
+                                    pressedElevation = 16.dp
+                                )
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.PlayArrow,
@@ -318,8 +349,12 @@ fun DailyPlanDetailScreen(
 
                             FloatingActionButton(
                                 onClick = { isEditing = !isEditing },
-                                containerColor = if (isEditing) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer,
-                                contentColor = if (isEditing) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer
+                                containerColor = if (isEditing) MaterialTheme.colorScheme.primary else Color(0xFF9E9E9E),
+                                contentColor = if (isEditing) MaterialTheme.colorScheme.onPrimary else Color.White,
+                                elevation = FloatingActionButtonDefaults.elevation(
+                                    defaultElevation = if (isEditing) 6.dp else 12.dp,
+                                    pressedElevation = if (isEditing) 8.dp else 16.dp
+                                )
                             ) {
                                 Icon(
                                     imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
@@ -621,14 +656,7 @@ fun DailyPlanDetailScreen(
                                                 } else {
                                                     OutlinedButton(
                                                         onClick = {
-                                                            val newSet = SetDetail(reps = 8, weightKg = 0f)
-                                                            commit(
-                                                                exercises.map {
-                                                                    if (it.id == exercise.id) it.copy(setsList = it.setsList + newSet) else it
-                                                                }
-                                                            )
-                                                            // Apre subito il dialog per la serie appena creata
-                                                            setToEditInfo = Triple(exercise.id, exercise.setsList.size + 1, newSet)
+                                                            exerciseToAddSetsFor = exercise
                                                         },
                                                         modifier = Modifier.fillMaxSize(),
                                                         shape = MaterialTheme.shapes.small,
@@ -692,11 +720,7 @@ fun DailyPlanDetailScreen(
 
         // Dialog per modificare reps e kg di una riga di serie
         setToEditInfo?.let { (exId, _, setItem) ->
-            val setNum = exercises.firstOrNull { it.id == exId }
-                ?.setsList?.indexOfFirst { it.id == setItem.id }
-                ?.plus(1) ?: 1
             EditSetValuesDialog(
-                setNumber = setNum,
                 setDetail = setItem,
                 onDismiss = { setToEditInfo = null },
                 onConfirm = { newReps, newWeight ->
@@ -715,58 +739,225 @@ fun DailyPlanDetailScreen(
                 }
             )
         }
+
+        // Dialog per aggiungere una o più serie ad un esercizio
+        exerciseToAddSetsFor?.let { exercise ->
+            AddSetsDialog(
+                exerciseName = exercise.name,
+                defaultReps = exercise.setsList.lastOrNull()?.reps ?: 8,
+                defaultWeightKg = exercise.setsList.lastOrNull()?.weightKg ?: 0f,
+                onDismiss = { exerciseToAddSetsFor = null },
+                onConfirm = { countToAdd, reps, weight ->
+                    val newSets = List(countToAdd) { SetDetail(reps = reps, weightKg = weight) }
+                    commit(
+                        exercises.map { ex ->
+                            if (ex.id == exercise.id) {
+                                ex.copy(setsList = ex.setsList + newSets)
+                            } else ex
+                        }
+                    )
+                    exerciseToAddSetsFor = null
+                }
+            )
+        }
     }
 }
 
 
 @Composable
 fun EditSetValuesDialog(
-    setNumber: Int,
     setDetail: SetDetail,
     onDismiss: () -> Unit,
     onConfirm: (Int, Float) -> Unit
 ) {
-    var repsText by remember { mutableStateOf(setDetail.reps.toString()) }
-    var weightText by remember { mutableStateOf(setDetail.weightKg.toString()) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Modifica Serie $setNumber") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = repsText,
-                    onValueChange = { repsText = it },
-                    label = { Text("Ripetizioni (reps)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                OutlinedTextField(
-                    value = weightText,
-                    onValueChange = { weightText = it },
-                    label = { Text("Peso (kg)") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val reps = repsText.toIntOrNull() ?: setDetail.reps
-                    val weight = weightText.toFloatOrNull() ?: setDetail.weightKg
-                    onConfirm(reps, weight)
-                }
-            ) {
-                Text("Salva")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annulla")
-            }
+    val initialRepsText = remember(setDetail) { setDetail.reps.toString() }
+    val initialWeightText = remember(setDetail) {
+        if (setDetail.weightKg % 1f == 0f) {
+            setDetail.weightKg.toInt().toString()
+        } else {
+            setDetail.weightKg.toString()
         }
-    )
+    }
+
+    var repsTextFieldValue by remember(setDetail) {
+        mutableStateOf(
+            TextFieldValue(
+                text = initialRepsText,
+                selection = TextRange(initialRepsText.length)
+            )
+        )
+    }
+
+    var weightTextFieldValue by remember(setDetail) {
+        mutableStateOf(
+            TextFieldValue(
+                text = initialWeightText,
+                selection = TextRange(initialWeightText.length)
+            )
+        )
+    }
+
+    AppAlertDialog(
+        onDismissRequest = onDismiss,
+        title = "Modifica Serie",
+        confirmButtonText = "Salva",
+        onConfirm = {
+            val reps = repsTextFieldValue.text.toIntOrNull() ?: setDetail.reps
+            val weightCleaned = weightTextFieldValue.text.replace(',', '.')
+            val weight = weightCleaned.toFloatOrNull() ?: setDetail.weightKg
+            onConfirm(reps, weight)
+        },
+        dismissButtonText = "Annulla",
+        onDismiss = onDismiss
+    ) {
+        OutlinedTextField(
+            value = repsTextFieldValue,
+            onValueChange = { repsTextFieldValue = it },
+            label = { Text("Ripetizioni (reps)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        repsTextFieldValue = repsTextFieldValue.copy(
+                            selection = TextRange(0, repsTextFieldValue.text.length)
+                        )
+                    }
+                }
+        )
+        OutlinedTextField(
+            value = weightTextFieldValue,
+            onValueChange = { weightTextFieldValue = it },
+            label = { Text("Peso (kg)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        weightTextFieldValue = weightTextFieldValue.copy(
+                            selection = TextRange(0, weightTextFieldValue.text.length)
+                        )
+                    }
+                }
+        )
+    }
+}
+
+
+@Composable
+fun AddSetsDialog(
+    exerciseName: String,
+    defaultReps: Int,
+    defaultWeightKg: Float,
+    onDismiss: () -> Unit,
+    onConfirm: (count: Int, reps: Int, weight: Float) -> Unit
+) {
+    val initialCountText = "1"
+    val initialRepsText = remember(defaultReps) { defaultReps.toString() }
+    val initialWeightText = remember(defaultWeightKg) {
+        if (defaultWeightKg % 1f == 0f) {
+            defaultWeightKg.toInt().toString()
+        } else {
+            defaultWeightKg.toString()
+        }
+    }
+
+    var countTextFieldValue by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = initialCountText,
+                selection = TextRange(initialCountText.length)
+            )
+        )
+    }
+
+    var repsTextFieldValue by remember(defaultReps) {
+        mutableStateOf(
+            TextFieldValue(
+                text = initialRepsText,
+                selection = TextRange(initialRepsText.length)
+            )
+        )
+    }
+
+    var weightTextFieldValue by remember(defaultWeightKg) {
+        mutableStateOf(
+            TextFieldValue(
+                text = initialWeightText,
+                selection = TextRange(initialWeightText.length)
+            )
+        )
+    }
+
+    AppAlertDialog(
+        onDismissRequest = onDismiss,
+        title = "Aggiungi Serie",
+        confirmButtonText = "Aggiungi",
+        onConfirm = {
+            val count = countTextFieldValue.text.toIntOrNull()?.coerceAtLeast(1) ?: 1
+            val reps = repsTextFieldValue.text.toIntOrNull() ?: defaultReps
+            val weightCleaned = weightTextFieldValue.text.replace(',', '.')
+            val weight = weightCleaned.toFloatOrNull() ?: defaultWeightKg
+            onConfirm(count, reps, weight)
+        },
+        dismissButtonText = "Annulla",
+        onDismiss = onDismiss
+    ) {
+        Text(
+            text = exerciseName,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Center
+        )
+        OutlinedTextField(
+            value = countTextFieldValue,
+            onValueChange = { countTextFieldValue = it },
+            label = { Text("Numero di serie da aggiungere") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        countTextFieldValue = countTextFieldValue.copy(
+                            selection = TextRange(0, countTextFieldValue.text.length)
+                        )
+                    }
+                }
+        )
+        OutlinedTextField(
+            value = repsTextFieldValue,
+            onValueChange = { repsTextFieldValue = it },
+            label = { Text("Ripetizioni (reps)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        repsTextFieldValue = repsTextFieldValue.copy(
+                            selection = TextRange(0, repsTextFieldValue.text.length)
+                        )
+                    }
+                }
+        )
+        OutlinedTextField(
+            value = weightTextFieldValue,
+            onValueChange = { weightTextFieldValue = it },
+            label = { Text("Peso (kg)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused) {
+                        weightTextFieldValue = weightTextFieldValue.copy(
+                            selection = TextRange(0, weightTextFieldValue.text.length)
+                        )
+                    }
+                }
+        )
+    }
 }

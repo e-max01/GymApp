@@ -1,5 +1,6 @@
 package com.example.gymapp.screens
 
+import com.example.gymapp.components.AppAlertDialog
 import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
@@ -250,33 +251,25 @@ fun AddNameDialog(
 ) {
     var textValue by remember { mutableStateOf("") }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
-        text = {
-            OutlinedTextField(
-                value = textValue,
-                onValueChange = { textValue = it },
-                label = { Text(label) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth()
-            )
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    if (textValue.isNotBlank()) {
-                        onConfirm(textValue.trim())
-                    }
-                }
-            ) {
-                Text("Crea")
+        title = title,
+        confirmButtonText = "Crea",
+        onConfirm = {
+            if (textValue.isNotBlank()) {
+                onConfirm(textValue.trim())
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annulla")
-            }
-        }
-    )
+        dismissButtonText = "Annulla",
+        onDismiss = onDismiss,
+        confirmEnabled = textValue.isNotBlank()
+    ) {
+        OutlinedTextField(
+            value = textValue,
+            onValueChange = { textValue = it },
+            label = { Text(label) },
+            singleLine = true,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
 }

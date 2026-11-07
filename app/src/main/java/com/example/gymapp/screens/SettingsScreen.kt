@@ -1,5 +1,6 @@
 package com.example.gymapp.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
@@ -49,6 +50,7 @@ fun SettingsScreen() {
         Text(
             text = "Settings",
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
@@ -123,6 +125,7 @@ fun SettingsButton(
             .fillMaxWidth(0.9f)
             .padding(vertical = 8.dp)
             .height(56.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
         shape = MaterialTheme.shapes.medium
     ) {
         Row(

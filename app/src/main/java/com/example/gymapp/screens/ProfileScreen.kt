@@ -1,5 +1,6 @@
 package com.example.gymapp.screens
 
+import com.example.gymapp.components.AppAlertDialog
 import android.content.Context
 import android.content.SharedPreferences
 import android.graphics.Bitmap
@@ -87,131 +88,121 @@ fun ProfileScreen() {
 
     // Dialog opzioni per foto già impostata
     if (showOptionsDialog) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showOptionsDialog = false },
-            title = { Text("Foto profilo") },
-            text = {
-                Column {
-                    // Opzione 1: Mostra immagine
-                    TextButton(
-                        onClick = {
-                            showOptionsDialog = false
-                            showFullImageDialog = true
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Visibility,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(end = 12.dp)
-                            )
-                            Text(
-                                "Mostra immagine",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-
-                    // Opzione 2: Scegli dalla galleria
-                    TextButton(
-                        onClick = {
-                            showOptionsDialog = false
-                            imagePickerLauncher.launch("image/*")
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Image,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurface,
-                                modifier = Modifier.padding(end = 12.dp)
-                            )
-                            Text(
-                                "Scegli dalla galleria",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-
-                    // Opzione 3: Rimuovi foto
-                    TextButton(
-                        onClick = {
-                            showOptionsDialog = false
-                            deleteProfilePicture(context, sharedPreferences)
-                            imagePath = null
-                            profileImageBitmap = null
-                            Toast.makeText(context, "Foto profilo rimossa", Toast.LENGTH_SHORT).show()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                            Text(
-                                "Rimuovi foto",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {},
-            dismissButton = {
-                TextButton(
-                    onClick = { showOptionsDialog = false },
-                    contentPadding = PaddingValues(horizontal = 12.dp)
+            title = "Foto profilo",
+            confirmButtonText = null,
+            onConfirm = null,
+            dismissButtonText = "Annulla",
+            onDismiss = { showOptionsDialog = false }
+        ) {
+            // Opzione 1: Mostra immagine
+            TextButton(
+                onClick = {
+                    showOptionsDialog = false
+                    showFullImageDialog = true
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Annulla")
+                    Icon(
+                        imageVector = Icons.Default.Visibility,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(end = 12.dp)
+                    )
+                    Text(
+                        "Mostra immagine",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
-        )
+
+            // Opzione 2: Scegli dalla galleria
+            TextButton(
+                onClick = {
+                    showOptionsDialog = false
+                    imagePickerLauncher.launch("image/*")
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Image,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.padding(end = 12.dp)
+                    )
+                    Text(
+                        "Scegli dalla galleria",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            // Opzione 3: Rimuovi foto
+            TextButton(
+                onClick = {
+                    showOptionsDialog = false
+                    deleteProfilePicture(context, sharedPreferences)
+                    imagePath = null
+                    profileImageBitmap = null
+                    Toast.makeText(context, "Foto profilo rimossa", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                    Text(
+                        "Rimuovi foto",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        }
     }
 
     // Dialog per mostrare la foto profilo ingrandita
     if (showFullImageDialog && profileImageBitmap != null) {
-        AlertDialog(
+        AppAlertDialog(
             onDismissRequest = { showFullImageDialog = false },
-            title = { Text("Foto profilo") },
-            text = {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clip(CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        bitmap = profileImageBitmap!!,
-                        contentDescription = "Foto profilo ingrandita",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showFullImageDialog = false }) {
-                    Text("Chiudi")
-                }
+            title = "Foto profilo",
+            confirmButtonText = null,
+            onConfirm = null,
+            dismissButtonText = "Chiudi",
+            onDismiss = { showFullImageDialog = false }
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .clip(CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    bitmap = profileImageBitmap!!,
+                    contentDescription = "Foto profilo ingrandita",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
             }
-        )
+        }
     }
 
     // Finestra di dialogo per ritaglio e ridimensionamento 1:1
@@ -244,6 +235,7 @@ fun ProfileScreen() {
         Text(
             text = "Profile",
             style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.primary,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
@@ -301,7 +293,11 @@ fun ProfileScreen() {
                 .fillMaxWidth(0.9f)
                 .padding(vertical = 8.dp),
             singleLine = true,
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+            )
         )
 
         OutlinedTextField(
@@ -312,7 +308,11 @@ fun ProfileScreen() {
                 .fillMaxWidth(0.9f)
                 .padding(vertical = 8.dp),
             singleLine = true,
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+            )
         )
 
         Row(
@@ -333,7 +333,11 @@ fun ProfileScreen() {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f),
                 singleLine = true,
-                shape = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                )
             )
 
             OutlinedTextField(
@@ -348,7 +352,11 @@ fun ProfileScreen() {
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.weight(1f),
                 singleLine = true,
-                shape = MaterialTheme.shapes.medium
+                shape = MaterialTheme.shapes.medium,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.outlineVariant,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                )
             )
         }
 
@@ -388,85 +396,71 @@ fun ImageCropDialog(
     val containerPx = with(density) { containerDp.toPx() }
     val imageBitmap = remember(bitmap) { bitmap.asImageBitmap() }
 
-    AlertDialog(
+    AppAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Ridimensiona foto (1:1)") },
-        text = {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "Sposta o ingrandisci l'immagine per adattarla al cerchio.",
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
+        title = "Ridimensiona foto (1:1)",
+        confirmButtonText = "Salva",
+        onConfirm = {
+            val cropped = createCroppedBitmap(
+                src = bitmap,
+                containerSizePx = containerPx,
+                userScale = userScale,
+                offsetX = offsetX,
+                offsetY = offsetY
+            )
+            onCropConfirmed(cropped)
+        },
+        dismissButtonText = "Annulla",
+        onDismiss = onDismiss
+    ) {
+        Text(
+            text = "Sposta o ingrandisci l'immagine per adattarla al cerchio.",
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(bottom = 12.dp)
+        )
 
-                // Container per la preview circolare
-                Box(
-                    modifier = Modifier
-                        .size(containerDp)
-                        .clip(CircleShape)
-                        .background(Color.Black)
-                        .pointerInput(Unit) {
-                            detectTransformGestures { _, pan, zoom, _ ->
-                                userScale = (userScale * zoom).coerceIn(1f, 3.5f)
-                                offsetX += pan.x
-                                offsetY += pan.y
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Canvas(modifier = Modifier.fillMaxSize()) {
-                        val baseScale = maxOf(size.width / imageBitmap.width, size.height / imageBitmap.height)
-                        val totalScale = baseScale * userScale
-                        val drawW = imageBitmap.width * totalScale
-                        val drawH = imageBitmap.height * totalScale
-                        val drawX = ((size.width - drawW) / 2f) + offsetX
-                        val drawY = ((size.height - drawH) / 2f) + offsetY
-
-                        drawImage(
-                            image = imageBitmap,
-                            dstOffset = IntOffset(drawX.roundToInt(), drawY.roundToInt()),
-                            dstSize = IntSize(drawW.roundToInt(), drawH.roundToInt())
-                        )
+        // Container per la preview circolare
+        Box(
+            modifier = Modifier
+                .size(containerDp)
+                .clip(CircleShape)
+                .background(Color.Black)
+                .pointerInput(Unit) {
+                    detectTransformGestures { _, pan, zoom, _ ->
+                        userScale = (userScale * zoom).coerceIn(1f, 3.5f)
+                        offsetX += pan.x
+                        offsetY += pan.y
                     }
-                }
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val baseScale = maxOf(size.width / imageBitmap.width, size.height / imageBitmap.height)
+                val totalScale = baseScale * userScale
+                val drawW = imageBitmap.width * totalScale
+                val drawH = imageBitmap.height * totalScale
+                val drawX = ((size.width - drawW) / 2f) + offsetX
+                val drawY = ((size.height - drawH) / 2f) + offsetY
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Slider per zoom
-                Text("Zoom", style = MaterialTheme.typography.labelMedium)
-                Slider(
-                    value = userScale,
-                    onValueChange = { userScale = it },
-                    valueRange = 1f..3.5f,
-                    modifier = Modifier.fillMaxWidth(0.9f)
+                drawImage(
+                    image = imageBitmap,
+                    dstOffset = IntOffset(drawX.roundToInt(), drawY.roundToInt()),
+                    dstSize = IntSize(drawW.roundToInt(), drawH.roundToInt())
                 )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = {
-                    val cropped = createCroppedBitmap(
-                        src = bitmap,
-                        containerSizePx = containerPx,
-                        userScale = userScale,
-                        offsetX = offsetX,
-                        offsetY = offsetY
-                    )
-                    onCropConfirmed(cropped)
-                }
-            ) {
-                Text("Salva")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Annulla")
             }
         }
-    )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Slider per zoom
+        Text("Zoom", style = MaterialTheme.typography.labelMedium)
+        Slider(
+            value = userScale,
+            onValueChange = { userScale = it },
+            valueRange = 1f..3.5f,
+            modifier = Modifier.fillMaxWidth(0.9f)
+        )
+    }
 }
 
 private fun createCroppedBitmap(

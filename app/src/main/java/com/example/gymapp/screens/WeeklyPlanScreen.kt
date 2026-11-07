@@ -10,12 +10,17 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,11 +36,14 @@ fun WeeklyPlansListScreen(
     onDeleteWeeklyPlan: (String) -> Unit
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+    var isEditing by remember(weeklyPlans.isEmpty()) { mutableStateOf(weeklyPlans.isEmpty()) }
+
+    val outlineColor = MaterialTheme.colorScheme.outlineVariant
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Le mie schede settimanali") },
+            CenterAlignedTopAppBar(
+                title = { Text("Schede settimanali") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -43,16 +51,39 @@ fun WeeklyPlansListScreen(
                             contentDescription = "Torna indietro"
                         )
                     }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                ),
+                modifier = Modifier.drawBehind {
+                    val strokeWidth = 1.dp.toPx()
+                    drawLine(
+                        color = outlineColor,
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, size.height),
+                        strokeWidth = strokeWidth
+                    )
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Nuova scheda settimanale")
+            FloatingActionButton(
+                onClick = { isEditing = !isEditing },
+                containerColor = if (isEditing) MaterialTheme.colorScheme.primary else Color(0xFF9E9E9E),
+                contentColor = if (isEditing) MaterialTheme.colorScheme.onPrimary else Color.White,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = if (isEditing) 6.dp else 12.dp,
+                    pressedElevation = if (isEditing) 8.dp else 16.dp
+                )
+            ) {
+                Icon(
+                    imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
+                    contentDescription = if (isEditing) "Conferma modifica" else "Attiva modifica"
+                )
             }
         }
     ) { paddingValues ->
-        if (weeklyPlans.isEmpty()) {
+        if (weeklyPlans.isEmpty() && !isEditing) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -60,7 +91,7 @@ fun WeeklyPlansListScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Nessuna scheda settimanale presente.\nPremi + in basso per crearne una nuova.",
+                    text = "Nessuna scheda settimanale presente.\nPremi il tasto Modifica in basso a destra per crearne una.",
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -78,9 +109,42 @@ fun WeeklyPlansListScreen(
                 itemsIndexed(weeklyPlans, key = { _, plan -> plan.id }) { _, plan ->
                     WeeklyPlanCard(
                         plan = plan,
+                        isEditing = isEditing,
                         onClick = { onSelectWeeklyPlan(plan) },
                         onDelete = { onDeleteWeeklyPlan(plan.id) }
                     )
+                }
+
+                if (isEditing) {
+                    item(key = "add_weekly_plan_button") {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { showAddDialog = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            border = BorderStroke(
+                                width = 1.5.dp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text(
+                                text = "Aggiungi scheda settimanale",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -102,6 +166,7 @@ fun WeeklyPlansListScreen(
 @Composable
 fun WeeklyPlanCard(
     plan: WeeklyWorkoutPlan,
+    isEditing: Boolean,
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -141,12 +206,16 @@ fun WeeklyPlanCard(
                 )
             }
 
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Elimina scheda",
-                    tint = MaterialTheme.colorScheme.error
-                )
+            if (isEditing) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Elimina scheda",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.size(48.dp))
             }
 
             Icon(
@@ -170,11 +239,14 @@ fun WeeklyPlanDetailScreen(
     onDeleteDailyPlan: (String) -> Unit
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
+    var isEditing by remember(weeklyPlan.dailyPlans.isEmpty()) { mutableStateOf(weeklyPlan.dailyPlans.isEmpty()) }
+
+    val outlineColor = MaterialTheme.colorScheme.outlineVariant
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(weeklyPlan.name) },
+            CenterAlignedTopAppBar(
+                title = { Text("Schede giornaliere") },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
@@ -182,16 +254,39 @@ fun WeeklyPlanDetailScreen(
                             contentDescription = "Torna indietro"
                         )
                     }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                ),
+                modifier = Modifier.drawBehind {
+                    val strokeWidth = 1.dp.toPx()
+                    drawLine(
+                        color = outlineColor,
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, size.height),
+                        strokeWidth = strokeWidth
+                    )
                 }
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Default.Add, contentDescription = "Nuova scheda giornaliera")
+            FloatingActionButton(
+                onClick = { isEditing = !isEditing },
+                containerColor = if (isEditing) MaterialTheme.colorScheme.primary else Color(0xFF9E9E9E),
+                contentColor = if (isEditing) MaterialTheme.colorScheme.onPrimary else Color.White,
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = if (isEditing) 6.dp else 12.dp,
+                    pressedElevation = if (isEditing) 8.dp else 16.dp
+                )
+            ) {
+                Icon(
+                    imageVector = if (isEditing) Icons.Default.Check else Icons.Default.Edit,
+                    contentDescription = if (isEditing) "Conferma modifica" else "Attiva modifica"
+                )
             }
         }
     ) { paddingValues ->
-        if (weeklyPlan.dailyPlans.isEmpty()) {
+        if (weeklyPlan.dailyPlans.isEmpty() && !isEditing) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -199,7 +294,7 @@ fun WeeklyPlanDetailScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Nessuna scheda giornaliera in questa settimana.\nPremi + in basso per aggiungerne una.",
+                    text = "Nessuna scheda giornaliera in questa settimana.\nPremi il tasto Modifica in basso a destra per aggiungerne una.",
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -217,9 +312,42 @@ fun WeeklyPlanDetailScreen(
                 itemsIndexed(weeklyPlan.dailyPlans, key = { _, daily -> daily.id }) { _, daily ->
                     DailyPlanCard(
                         dailyPlan = daily,
+                        isEditing = isEditing,
                         onClick = { onSelectDailyPlan(daily) },
                         onDelete = { onDeleteDailyPlan(daily.id) }
                     )
+                }
+
+                if (isEditing) {
+                    item(key = "add_daily_plan_button") {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { showAddDialog = true },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = MaterialTheme.shapes.medium,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            border = BorderStroke(
+                                width = 1.5.dp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+                            Text(
+                                text = "Aggiungi scheda giornaliera",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -241,6 +369,7 @@ fun WeeklyPlanDetailScreen(
 @Composable
 fun DailyPlanCard(
     dailyPlan: DailyWorkoutPlan,
+    isEditing: Boolean,
     onClick: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -263,29 +392,33 @@ fun DailyPlanCard(
             Icon(
                 imageVector = Icons.Default.FitnessCenter,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.secondary,
+                tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(end = 16.dp)
             )
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = dailyPlan.name,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "${dailyPlan.exercises.size} esercizi inseriti",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Elimina giorno",
-                    tint = MaterialTheme.colorScheme.error
-                )
+            if (isEditing) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Elimina giorno",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.size(48.dp))
             }
 
             Icon(
